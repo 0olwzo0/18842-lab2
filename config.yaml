@@ -1,0 +1,49 @@
+# Defines which nodes are used in the system and how to connect to them.
+# This element should only be referenced during the constructor's initial
+# setup.
+# All names must be unique.
+# No other nodes are known.
+# These names will be used for src and dest addresses for the Message
+# The local node’s name is included in this list
+configuration :
+- name : alice
+  ip   : 127.0.0.1
+  port : 12344    # This is the incoming port on which MP will listen
+                  # May be changed for further communication as usual
+- name : bob
+  ip   : 127.0.0.1
+  port : 14255
+- name : charlie
+  ip   : 127.0.0.1
+  port : 12998
+- name : daphnie
+  ip   : 127.0.0.1
+  port : 1987
+- name : logger
+  ip   : 127.0.0.1
+  port : 2004
+
+clock: logical
+
+sendRules :
+  - action : duplicate    
+    kind   : send_dup      
+  - action : drop
+    kind   : send_drop
+  - action : delay
+    kind    : send_del
+  - action : duplicate
+    kind   : both_dup
+  - action : duplicate
+    kind   : dup_drop
+
+receiveRules :
+  - action : duplicate    
+    kind   : rec_dup
+  - action : drop
+    kind   : rec_drop
+  - action : delay
+    kind   : rec_del
+  - action : drop
+    kind   : dup_drop
+    duplicate : true
