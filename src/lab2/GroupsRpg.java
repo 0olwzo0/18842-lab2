@@ -33,7 +33,7 @@ public class GroupsRpg {
 				
 				Hashtable <String, Integer> Rpg = new Hashtable<String, Integer>(); 
 				for(String tmp : groupMem){
-					Rpg.put(tmp, 0);
+					Rpg.put(tmp, -1);
 				}
 				
 				this.groups.put(groupName, Rpg);

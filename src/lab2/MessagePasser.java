@@ -101,7 +101,7 @@ public class MessagePasser {
 
 	
 	
-	public GroupsRpg groups;
+	public GroupsRpg groupsRpg;
 	public Hashtable<String, List<Message>> holdBuffer = new Hashtable<String, List<Message>>();
 	public MulticastMessagePasser mmp;
 	/**
@@ -201,7 +201,7 @@ public class MessagePasser {
 			 * add group
 			 */
 			else if("groups".equals(key)){
-				this.groups = new GroupsRpg(entry.getValue());
+				this.groupsRpg = new GroupsRpg(entry.getValue());
 				
 				//System.out.println(this.groups.toString());
 			}
@@ -258,6 +258,7 @@ public class MessagePasser {
 
 		private Socket connectionSocket;
 		private int connectionID;
+	
 
 		public ClientThread(Socket connectionSocket) {
 			this.connectionSocket = connectionSocket;
@@ -272,8 +273,16 @@ public class MessagePasser {
 				// Wait for incoming messages forever (until something happens)
 				while (true) {
 					// Modifed Message to TimeStampledMessage
-					TimeStampedMessage incomingMessage = (TimeStampedMessage) in.readObject();
-					System.out.println(incomingMessage);
+					/**
+					 * modified by wenzhe
+					 */
+					Object incomeObject = in.readObject();
+					Message incomingMessage = (Message) incomeObject;
+					
+					//incomingMessage = (TimeStampedMessage) incomingMessage;
+					
+					//TimeStampedMessage incomingMessage = (TimeStampedMessage) in.readObject();
+					//System.out.println(incomingMessage);
 					if (incomingMessage == null) {
 						break;
 					}
@@ -286,9 +295,19 @@ public class MessagePasser {
 						// No rules applied. First, deliver this message.
 						// Then, deliver delayed messages in receiveBuffer.
 						System.out.println("Action: none");
-						inputQueue.add(incomingMessage);
-						inputQueue.addAll(receiveBuffer);
-						receiveBuffer.clear();
+						
+						if(incomingMessage instanceof MulticastMessage){
+							System.out.println("I'm MulticastMessage");
+							MulticastMessage receiveMessage= mmp.receive((MulticastMessage)(incomingMessage));
+							if(receiveMessage != null){
+								inputQueue.add(receiveMessage);	
+							}
+						}
+						else{
+							inputQueue.add(incomingMessage);
+						}
+						inputReceiveBuffer();
+						
 					} else {
 						// Execute an action
 						System.out.println("Action: " + action);
@@ -305,10 +324,20 @@ public class MessagePasser {
 							// duplicate.
 							// Then, deliver all delayed messages in
 							// receiveBuffer
-							inputQueue.add(incomingMessage);
-							inputQueue.add(new TimeStampedMessage(incomingMessage));
-							inputQueue.addAll(receiveBuffer);
-							receiveBuffer.clear();
+							if(incomingMessage instanceof MulticastMessage){
+								MulticastMessage receiveMessage = mmp.receive((MulticastMessage)(incomingMessage));	
+								if(receiveMessage != null){
+									MulticastMessage dup = new MulticastMessage((MulticastMessage)receiveMessage);
+									dup.setDuplicate(true);
+									inputQueue.add(receiveMessage);
+									inputQueue.add(dup);
+								}
+							}
+							else{
+								inputQueue.add(incomingMessage);
+								inputQueue.add(new Message(incomingMessage));
+							}
+							inputReceiveBuffer();
 							break;
 						}
 					}
@@ -363,6 +392,21 @@ public class MessagePasser {
 		}
 	}
 
+	
+	private void inputReceiveBuffer(){
+		while(!receiveBuffer.isEmpty()){
+			Message delayMsg = receiveBuffer.remove(0);
+			if( delayMsg instanceof MulticastMessage){
+				MulticastMessage receiveMessage = mmp.receive((MulticastMessage)(delayMsg));
+				if(receiveMessage != null)
+					inputQueue.add(receiveMessage);
+			}
+			else{
+				inputQueue.add(delayMsg);
+			}
+		}
+		receiveBuffer.clear();
+	}
 	/**
 	 * Show a command prompt to user.
 	 */
@@ -402,12 +446,27 @@ public class MessagePasser {
 						/**
 						 * modified by wenzhe
 						 */
-						TimeStampedMessage message;
+						Message message;
+						while((message = receive()) != null){
+							if(message instanceof TimeStampedMessage){
+								TimeStampedMessage tsMessage = (TimeStampedMessage) message;
+								System.out.println(tsMessage.toString());
+								// Adjust the local timeStamp
+								this.hostTimeStamp.adjustClock(tsMessage.getTimeStamp());
+							}
+							else if(message instanceof MulticastMessage){
+								MulticastMessage mcMessage = (MulticastMessage) message;
+								System.out.println(mcMessage.toString());
+								this.hostTimeStamp.adjustClock(mcMessage.getTimeStamp());
+							}
+						}
+						
+						/*TimeStampedMessage message;
 						while ((message = (TimeStampedMessage)receive()) != null) {
 							System.out.println(message);
 							// Adjust the local timeStamp
 							this.hostTimeStamp.adjustClock(message.getTimeStamp());
-						}
+						}*/
 					} else if ("q".equals(tokens[0])) {
 						for (ClientThread thread : connectionThreads) {
 							thread.closeSockets();
@@ -493,6 +552,7 @@ public class MessagePasser {
 					// Just add to sendBuffer
 					sendBuffer.add(message);
 					System.out.println(message + " :: Delayed");
+
 					break;
 				case drop:
 					// Do nothing
@@ -558,6 +618,7 @@ public class MessagePasser {
 	private void printBuffersStatus() {
 		System.out.println("{sendBuffer:" + sendBuffer.size() + " receiveBuffer:" + receiveBuffer.size()
 				+ " inputQueue:" + inputQueue.size() + "}");
+		System.out.println("------------------------------------------------");
 	}
 
 	@Override

@@ -32,6 +32,7 @@ public class MulticastMessage extends Message implements Serializable{
  	 	this.timeStamp = timeStamp;
  	 	this.groupName = gName;
  		this.concurrent = false;
+ 		this.acknowledgement = new Hashtable <String, Integer>();
  		for(String tmpKey : Rpg.keySet()){
  			this.acknowledgement.put(tmpKey, Rpg.get(tmpKey));
  		}
@@ -46,6 +47,7 @@ public class MulticastMessage extends Message implements Serializable{
  		this.data = originalMessage.data; // clone?
  		this.concurrent = false;
  		this.timeStamp = originalMessage.timeStamp;
+ 		this.acknowledgement = new Hashtable <String, Integer>();
  		for(String tmpKey : Rpg.keySet()){
  			this.acknowledgement.put(tmpKey, Rpg.get(tmpKey));
  		}
@@ -80,7 +82,13 @@ public class MulticastMessage extends Message implements Serializable{
  		return this.groupName;
  	}
  	
+ 	public void setKind(String kind){
+ 		this.kind = kind;
+ 	}
  	
+ 	public String getKind(){
+ 		return this.kind;
+ 	}
  	
  	public void setTimeStamp(Clock hostTimeStamp){
  		this.timeStamp = hostTimeStamp;
@@ -102,7 +110,7 @@ public class MulticastMessage extends Message implements Serializable{
  	
  	@Override
  	public String toString() {
- 		return "Message["+ source +"->"+ dest +" seqNum:"+ seqNum +" duplicate:"+ duplicate +" kind:"+ kind
- 				+" data:"+ data +" \nTimeStamp:" + this.timeStamp + " \nAcknowledgement:" + this.acknowledgement + "]\n";
+ 		return "MESSAGE{"+ source +"->"+ dest +" seqNum:"+ seqNum +" duplicate:"+ duplicate +" kind:"+ kind
+ 				+" data:"+ data +" \nTIMESTAMP[:" + this.timeStamp + " ]\nACK:" + this.acknowledgement + "} ";
  	}
 }
