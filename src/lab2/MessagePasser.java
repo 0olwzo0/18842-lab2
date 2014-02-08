@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +82,8 @@ public class MessagePasser {
 	 * "MessagePasser.receive()"
 	 */
 	private List<Message> inputQueue = new LinkedList<Message>();
-
+	
+	
 	/**
 	 * Reference number for each ClientThread. For debugging purpose.
 	 */
@@ -97,6 +99,18 @@ public class MessagePasser {
    */
 	private ArrayList<ClientThread> connectionThreads = new ArrayList<ClientThread>();
 
+	
+	
+	public GroupsRpg groups;
+	public Hashtable<String, List<Message>> holdBuffer = new Hashtable<String, List<Message>>();
+	public MulticastMessagePasser mmp;
+	/**
+	 * Store messages delivered from "receiveBuffer" to be displayed by
+	 * "MessagePasser.receive()"
+	 */
+	//private List<Message> holdBuffer = new LinkedList<Message>();
+
+	
 	/**
 	 * Receive 2 arguments for config filename and local name
 	 * 
@@ -113,17 +127,26 @@ public class MessagePasser {
 				+ "c\t\tShow local TimeStamp\n"
 				+ "q\t\tQuit");
 			MessagePasser mp = new MessagePasser(argv[0], argv[1]);
+			
 			mp.listen();
 			mp.showCommandPrompt();
 		}
 	}
 
+	public String getLocalName(){
+		return this.localName;
+	}
+	
+	public Clock getTimeStamp(){
+		return this.hostTimeStamp;
+	}
 	/**
 	 * MessagePasser constructor. Defined by the assignment.
 	 * 
 	 * @param configuration_filename
 	 * @param local_name
 	 */
+	public MessagePasser(){}
 	public MessagePasser(String configuration_filename, String local_name) {
 		/*
 		System.out.println("== MessagePasser [wkanchan + ytobioka] ==\n" + "Usage:\n"
@@ -135,6 +158,7 @@ public class MessagePasser {
 		this.localName = local_name;
 		this.configFileName = configuration_filename;
 		this.readConfig();
+		this.mmp = new MulticastMessagePasser(this);
 		/*
 		listen();
 		showCommandPrompt();
@@ -171,6 +195,15 @@ public class MessagePasser {
 					System.err.println("Input error: You need to configure clock type");
 					System.exit(1);
 				}
+			}
+			/**
+			 * author : wenzheli
+			 * add group
+			 */
+			else if("groups".equals(key)){
+				this.groups = new GroupsRpg(entry.getValue());
+				
+				//System.out.println(this.groups.toString());
 			}
 			else if ("sendRules".equals(key)) {
 				this.sendRules = new Rules(entry.getValue());
@@ -337,22 +370,38 @@ public class MessagePasser {
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 		System.out.print(localName + "# ");
 		String inputCommand;
+		
 		try {
 			while ((inputCommand = in.readLine()) != null) {
 				String[] tokens = inputCommand.split(" ");
 				if (tokens.length > 0) {
 					if ("s".equals(tokens[0]) && tokens.length == 3) {
-						// Send: Create a new message and send
-						Message message = new Message(tokens[1], tokens[2], null);
-						message.setSource(localName);
-						message.setSeqNum(nextSeqNum++);
-						// Increment Local TimeStamp
-						this.hostTimeStamp.addClock();
-						// Add TimeStamp to Message
-						TimeStampedMessage t_message = new TimeStampedMessage(message,this.hostTimeStamp.deepCopy());
-						send(t_message);
+						/**
+						 * send multicast message
+						 */
+						if(tokens[1].startsWith("Group")){
+							Message message = new Message(tokens[1], tokens[2], null);
+							message.setSource(localName);
+							this.hostTimeStamp.addClock();
+							this.mmp.send(tokens[1], message);
+						}
+						else{
+							// Send: Create a new message and send
+							Message message = new Message(tokens[1], tokens[2], null);
+							message.setSource(localName);
+							message.setSeqNum(nextSeqNum++);
+							// Increment Local TimeStamp
+							this.hostTimeStamp.addClock();
+							// Add TimeStamp to Message
+							TimeStampedMessage t_message = new TimeStampedMessage(message,this.hostTimeStamp.deepCopy());
+							send(t_message);
+						}
 					} else if ("r".equals(tokens[0])) {
 						// Receive
+						
+						/**
+						 * modified by wenzhe
+						 */
 						TimeStampedMessage message;
 						while ((message = (TimeStampedMessage)receive()) != null) {
 							System.out.println(message);
@@ -386,7 +435,7 @@ public class MessagePasser {
 	 *            The message to send.
 	 */
 ///	void send(Message message) {
-	void send(TimeStampedMessage message) {
+	void send(Message message) {
 		// read configuration file to load Rules
 		this.readConfig();
 		// Check whether current connection is exists.
@@ -454,7 +503,8 @@ public class MessagePasser {
 					// Then, send delayed messages in sendBuffer
 					out.writeObject(message);
 					System.out.println(message + " :: Sent");
-					TimeStampedMessage duplicatedMessage = new TimeStampedMessage(message);
+					TimeStampedMessage duplicatedMessage = new TimeStampedMessage((TimeStampedMessage)(message));
+					//TimeStampedMessage duplicatedMessage = new TimeStampedMessage(message);
 					out.writeObject(duplicatedMessage);
 					System.out.println(duplicatedMessage + " :: Sent");
 					while (!sendBuffer.isEmpty()) {

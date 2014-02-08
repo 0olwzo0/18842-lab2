@@ -8,7 +8,7 @@
 configuration :
 - name : alice
   ip   : 127.0.0.1
-  port : 12344    # This is the incoming port on which MP will listen
+  port : 12347    # This is the incoming port on which MP will listen
                   # May be changed for further communication as usual
 - name : bob
   ip   : 127.0.0.1
@@ -22,6 +22,20 @@ configuration :
 - name : logger
   ip   : 127.0.0.1
   port : 2004
+
+groups :
+- name : Group1
+  members : 
+  - alice
+  - bob
+  - charlie
+
+- name : Group2
+  members :    # This is the incoming port on which MP will listen
+  - bob
+  - charlie
+  - daphnie         # May be changed for further communication as usual
+
 
 clock: logical
 

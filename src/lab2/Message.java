@@ -43,6 +43,10 @@ public class Message implements Serializable {
  		this.source = source;
  	}
  	
+ 	public void setDest(String dest){
+ 		this.dest = dest;
+ 	}
+ 	
  	public String getSource(){
  		return this.source;
  	}

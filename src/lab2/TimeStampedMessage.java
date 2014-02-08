@@ -64,5 +64,7 @@ public class TimeStampedMessage extends Message implements Serializable {
  	public String toString() {
  		return "Message["+source+"->"+dest+" seqNum:"+seqNum+" duplicate:"+duplicate+" kind:"+kind+" data:"+data+" TimeStamp:" + this.timeStamp + "]";
  	}
+ 	
+ 	
 
 }
