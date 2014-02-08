@@ -392,7 +392,9 @@ public class MessagePasser {
 		}
 	}
 
-	
+	/**
+	 * remove Receive Buffer to inputQueue
+	 */
 	private void inputReceiveBuffer(){
 		while(!receiveBuffer.isEmpty()){
 			Message delayMsg = receiveBuffer.remove(0);
