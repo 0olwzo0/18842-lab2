@@ -15,15 +15,14 @@ public abstract class Clock implements Serializable{
 	private static final long serialVersionUID = -1572979670042116707L;
 	public static Clock makeClock(String clockType, Hosts hosts, String hostName){
 		Clock clock = null;
-		switch(clockType){
-		case "vector":
-			clock =  (Clock)(new VectorClock(hosts, hostName));
-			break;
-		case "logical":
-			clock = (Clock)(new LogicClock());
-			break;
+		if(clockType.equals("vector")){
 		
+			clock =  (Clock)(new VectorClock(hosts, hostName));
 		}
+		else{
+			clock = (Clock)(new LogicClock());
+		}
+		
 		return clock;
 	}
 	
