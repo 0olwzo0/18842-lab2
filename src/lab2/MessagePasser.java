@@ -563,10 +563,19 @@ public class MessagePasser {
 					// Then, send delayed messages in sendBuffer
 					out.writeObject(message);
 					System.out.println(message + " :: Sent");
-					TimeStampedMessage duplicatedMessage = new TimeStampedMessage((TimeStampedMessage)(message));
+					if(message instanceof MulticastMessage){
+						MulticastMessage duplicatedMessage = new MulticastMessage((MulticastMessage)message);
+						duplicatedMessage.setDuplicate(true);
+						out.writeObject(duplicatedMessage);
+						System.out.println(duplicatedMessage + " :: Sent");
+					}
+					else{
+						TimeStampedMessage duplicatedMessage = new TimeStampedMessage((TimeStampedMessage)(message));
+						out.writeObject(duplicatedMessage);
+						System.out.println(duplicatedMessage + " :: Sent");
+					}
 					//TimeStampedMessage duplicatedMessage = new TimeStampedMessage(message);
-					out.writeObject(duplicatedMessage);
-					System.out.println(duplicatedMessage + " :: Sent");
+					
 					while (!sendBuffer.isEmpty()) {
 						Message delayedMessage = sendBuffer.remove(0);
 						out.writeObject(delayedMessage);
