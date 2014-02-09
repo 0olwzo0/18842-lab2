@@ -40,6 +40,7 @@ public class MulticastMessagePasser{
 	public void send(String groupName, Message message) {
 		
 		message.setSeqNum(this.groupSpg.get(groupName));
+		this.groupRpg.groups.get(groupName).put(this.localHostName, this.groupSpg.get(groupName));
 		this.groupSpg.put(groupName, this.groupSpg.get(groupName) + 1);
 
 		for(String mem : this.groupRpg.groups.get(groupName).keySet()){
@@ -75,6 +76,8 @@ public class MulticastMessagePasser{
 			String groupName = mMsg.getGroupName();
 			String src = mMsg.getSource();
 			String dest = mMsg.getDest();
+			boolean validOriginMsg = true;
+			
 			if(thisSeq == this.groupRpg.groups.get(groupName).get(src) + 1){
 				//return mMsg;
 				this.groupRpg.groups.get(groupName).put(src, thisSeq);
@@ -86,11 +89,33 @@ public class MulticastMessagePasser{
 				MulticastMessage multicastNackMsg = new MulticastMessage(NACKmsg, groupName, this.messagePasser.getTimeStamp(),
 						new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)));
 				this.messagePasser.send(multicastNackMsg);
-				mMsg = null;
+				//mMsg = null;
+				validOriginMsg = false;
 			}
 			else {
-				mMsg = null;
+				//mMsg = null;
+				validOriginMsg = false;
 			}
+			
+			for(String memName : this.groupRpg.groups.get(groupName).keySet()){
+				if((!memName.equals(src)) && (!memName.equals(this.localHostName))&& (this.groupRpg.groups.get(groupName).get(memName) 
+						< mMsg.acknowledgement.get(memName))){
+					Message NACKmsg = new Message(memName, "NACK", null);
+					NACKmsg.setSource(this.localHostName);
+					NACKmsg.setSeqNum(this.groupRpg.groups.get(groupName).get(memName) + 1);
+					MulticastMessage multicastNackMsg = new MulticastMessage(NACKmsg, groupName, this.messagePasser.getTimeStamp(),
+							new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)));
+					this.messagePasser.send(multicastNackMsg);
+				}
+				else if((!memName.equals(src)) && (!memName.equals(this.localHostName)) && this.groupRpg.groups.get(groupName).get(memName) 
+				>= mMsg.acknowledgement.get(memName)){
+					this.groupRpg.groups.get(groupName)
+					.put(memName,this.groupRpg.groups.get(groupName).get(memName));
+				}
+			}
+			
+			if(!validOriginMsg)
+				mMsg = null;
 			return mMsg;
 		}
 		
