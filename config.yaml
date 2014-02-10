@@ -41,11 +41,14 @@ clock: logical
 
 sendRules :
   - action : duplicate    
-    kind   : send_dup      
+    kind   : send_dup  
+    dest   : bob    
   - action : drop
     kind   : send_drop
+    dest   : bob
   - action : delay
     kind    : send_del
+    dest   : bob
   - action : duplicate
     kind   : both_dup
   - action : duplicate
@@ -54,10 +57,13 @@ sendRules :
 receiveRules :
   - action : duplicate    
     kind   : rec_dup
+    dest   : bob
   - action : drop
     kind   : rec_drop
+    dest   : bob
   - action : delay
     kind   : rec_del
+    dest   : bob
   - action : drop
     kind   : dup_drop
     duplicate : true

@@ -3,6 +3,7 @@ package lab2;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 
 public class VectorClock extends Clock implements Serializable {
 
@@ -21,6 +22,17 @@ public class VectorClock extends Clock implements Serializable {
 			this.clock.put(host, 0);
 		}
 	}
+	
+	/*
+	 * Constructor for multicast clocks
+	 */
+	public VectorClock(List<String> groupMembers, String hostName) {
+		this.clock = new Hashtable<String, Integer>();
+		this.hostName = hostName;
+		for (String member : groupMembers) {
+			this.clock.put(member, 0);
+		}
+	}
 
 	@Override
 	synchronized public void addClock() {
@@ -31,6 +43,8 @@ public class VectorClock extends Clock implements Serializable {
 
 	@Override
 	synchronized public void adjustClock(Clock receivedTimeStamp) {
+		if (receivedTimeStamp == null)
+			System.out.println("---------------------------debug: received group clock null!!");
 		Hashtable<String, Integer> tmpTimeStamp = (Hashtable<String, Integer>) receivedTimeStamp.getClock();
 		for (String tmpKey : this.clock.keySet()) {
 			if (tmpTimeStamp.containsKey(tmpKey)) {

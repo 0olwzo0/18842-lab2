@@ -10,9 +10,11 @@ import java.util.Set;
 
 public class GroupsRpg {
 	public Hashtable<String, Hashtable <String, Integer>> groups = new Hashtable<String, Hashtable <String, Integer>> ();
+	// maintain a vector for each group
+	private Hashtable<String, VectorClock> clockGroup = new Hashtable<String, VectorClock> ();
 	
 	public GroupsRpg(){}
-	public GroupsRpg(Object groups){
+	public GroupsRpg(Object groups, String localName){
 		ArrayList<Object> groupList = (ArrayList<Object>) groups;
 		for(Object group : groupList){
 			String groupName = null;
@@ -37,6 +39,10 @@ public class GroupsRpg {
 				}
 				
 				this.groups.put(groupName, Rpg);
+				
+				// Make clocks for each group and put it into hashtable
+				VectorClock clockForGroup = new VectorClock(groupMem, localName);
+				this.clockGroup.put(groupName, clockForGroup);	
 			}
 			
 			
@@ -56,22 +62,31 @@ public class GroupsRpg {
 		return this.groups.get(groupName);
 	}
 	
+	public Hashtable<String, VectorClock> getClockGroup() {
+		return clockGroup;
+	}
+	
+	
+//	@Override
+//	public String toString() {
+//		String toString = "{\n";
+//		for (Entry<String, Hashtable<String, Integer>> entry : this.groups.entrySet()) {
+//			Hashtable<String, Integer> tmp = entry.getValue();
+//			toString += entry.getKey() + ":";
+//			Object [] arrMem = tmp.keySet().toArray(); 
+//			Arrays.sort(arrMem);
+//			for(int i = 0; i < arrMem.length; i++){
+//				toString +=  "[" + arrMem[i] + ": " + entry.getValue().get(arrMem[i]) + "] ";
+//			}
+//			//toString += tmp.keySet().toString();
+//			toString += "\n";
+//		}
+//		toString += "}\n";
+//		return toString;
+//	}
 	
 	@Override
 	public String toString() {
-		String toString = "{\n";
-		for (Entry<String, Hashtable<String, Integer>> entry : this.groups.entrySet()) {
-			Hashtable<String, Integer> tmp = entry.getValue();
-			toString += entry.getKey() + ":";
-			Object [] arrMem = tmp.keySet().toArray(); 
-			Arrays.sort(arrMem);
-			for(int i = 0; i < arrMem.length; i++){
-				toString +=  "[" + arrMem[i] + ": " + entry.getValue().get(arrMem[i]) + "] ";
-			}
-			//toString += tmp.keySet().toString();
-			toString += "\n";
-		}
-		toString += "}\n";
-		return toString;
+		return clockGroup.toString();
 	}
 }

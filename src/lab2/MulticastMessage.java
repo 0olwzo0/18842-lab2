@@ -12,6 +12,8 @@ public class MulticastMessage extends Message implements Serializable{
 	private boolean concurrent;
 	private String groupName;
  	protected Hashtable <String, Integer> acknowledgement = null;
+ 	// clock for group
+ 	private Clock clockForGroup;
  	
  	
  	public MulticastMessage(){};
@@ -22,7 +24,8 @@ public class MulticastMessage extends Message implements Serializable{
  		this.groupName = null;
  	}
  	
- 	public MulticastMessage(Message originalMessage, String gName, Clock timeStamp, Hashtable <String, Integer> Rpg){
+ 	public MulticastMessage(Message originalMessage, String gName, Clock timeStamp, 
+ 			Hashtable <String, Integer> Rpg, Clock localGroupClock){
  		this.source = originalMessage.source;
  		this.dest = originalMessage.dest;
  	 	this.kind = originalMessage.kind;
@@ -36,6 +39,7 @@ public class MulticastMessage extends Message implements Serializable{
  		for(String tmpKey : Rpg.keySet()){
  			this.acknowledgement.put(tmpKey, Rpg.get(tmpKey));
  		}
+ 		this.clockForGroup = localGroupClock;
  	}
  	
  	public MulticastMessage(TimeStampedMessage originalMessage, Hashtable <String, Integer> Rpg) {
@@ -64,6 +68,7 @@ public class MulticastMessage extends Message implements Serializable{
  		this.concurrent = true;
  		this.timeStamp = originalMessage.timeStamp;
  		this.acknowledgement = originalMessage.acknowledgement;
+ 		this.clockForGroup = originalMessage.getClockForGroup();
  	}
  	
  	public void setConcurrent(){
@@ -108,9 +113,17 @@ public class MulticastMessage extends Message implements Serializable{
  		}
  	}
  	
+ 	public Clock getClockForGroup() {
+		return clockForGroup;
+	}
+	public void setClockForGroup(VectorClock clockForGroup) {
+		this.clockForGroup = clockForGroup;
+	}
+ 	
  	@Override
  	public String toString() {
  		return "MESSAGE{"+ source +"->"+ dest +" seqNum:"+ seqNum +" duplicate:"+ duplicate +" kind:"+ kind
- 				+" data:"+ data +" \nTIMESTAMP[:" + this.timeStamp + " ]\nACK:" + this.acknowledgement + "} ";
+ 				+" data:"+ data +" \nTIMESTAMP[:" + this.timeStamp + " ]\nACK:" + this.acknowledgement + "} "
+ 				+ " clockForGroup = {" + clockForGroup.toString() + "}";
  	}
 }

@@ -101,7 +101,7 @@ public class MessagePasser {
 
 	
 	
-	public GroupsRpg groupsRpg;
+	public GroupsRpg groupsRpg = null;
 	public Hashtable<String, List<Message>> holdBuffer = new Hashtable<String, List<Message>>();
 	public MulticastMessagePasser mmp;
 	/**
@@ -201,7 +201,9 @@ public class MessagePasser {
 			 * add group
 			 */
 			else if("groups".equals(key)){
-				this.groupsRpg = new GroupsRpg(entry.getValue());
+				if (groupsRpg == null) {
+					this.groupsRpg = new GroupsRpg(entry.getValue(), localName);
+				}
 				
 				//System.out.println(this.groups.toString());
 			}
@@ -300,7 +302,12 @@ public class MessagePasser {
 							System.out.println("I'm MulticastMessage");
 							MulticastMessage receiveMessage= mmp.receive((MulticastMessage)(incomingMessage));
 							if(receiveMessage != null){
+								// update group clock
+								groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+										).adjustClock(receiveMessage.getClockForGroup());
+								
 								inputQueue.add(receiveMessage);	
+
 							}
 						}
 						else{
@@ -329,6 +336,9 @@ public class MessagePasser {
 								if(receiveMessage != null){
 									MulticastMessage dup = new MulticastMessage((MulticastMessage)receiveMessage);
 									dup.setDuplicate(true);
+									// update group clock
+									groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+											).adjustClock(receiveMessage.getClockForGroup());
 									inputQueue.add(receiveMessage);
 									inputQueue.add(dup);
 								}
@@ -397,8 +407,12 @@ public class MessagePasser {
 			Message delayMsg = receiveBuffer.remove(0);
 			if( delayMsg instanceof MulticastMessage){
 				MulticastMessage receiveMessage = mmp.receive((MulticastMessage)(delayMsg));
-				if(receiveMessage != null)
+				if(receiveMessage != null) {
+					// update group clock
+					groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+							).adjustClock(receiveMessage.getClockForGroup());
 					inputQueue.add(receiveMessage);
+				}
 			}
 			else{
 				inputQueue.add(delayMsg);
@@ -617,6 +631,8 @@ public class MessagePasser {
 	 */
 	Message receive() {
 		try {
+			// first sort the input queue for multicast message
+			sortInputQueue();
 			return inputQueue.remove(0);
 		} catch (Exception e) {
 			return null;
@@ -642,5 +658,37 @@ public class MessagePasser {
 	
 	public Hosts getHosts(){
 		return this.hosts;
+	}
+	
+	/*
+	 * Sort the inputQueue for multicast message according to group timestamp
+	 */
+	private void sortInputQueue() {
+		for (int out = inputQueue.size() - 1; out >= 1; out--) {
+			for (int in = 0; in < out; in++) {
+				
+				// Only sort MulticastMessage
+				if (inputQueue.get(in) instanceof MulticastMessage) {
+					
+					for (int j = in + 1; j <= out; j++) {
+						if (inputQueue.get(j) instanceof MulticastMessage) {
+							MulticastMessage prev = (MulticastMessage) inputQueue.get(in);
+							MulticastMessage next = (MulticastMessage) inputQueue.get(j);
+							// When these two messages are in same group, and previous one 
+							// is before the next one, we swap
+							if (prev.getGroupName().equalsIgnoreCase(next.getGroupName())
+									&& prev.getClockForGroup().compareClock(next.getClockForGroup()) > 0){
+								System.out.println("Test---- Swap occur!");
+								// Swap
+								MulticastMessage tmp = (MulticastMessage) inputQueue.get(in);
+								inputQueue.set(in, inputQueue.get(j));
+								inputQueue.set(j, tmp);
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
 	}
 }

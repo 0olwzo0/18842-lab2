@@ -42,12 +42,20 @@ public class MulticastMessagePasser{
 		message.setSeqNum(this.groupSpg.get(groupName));
 		this.groupRpg.groups.get(groupName).put(this.localHostName, this.groupSpg.get(groupName));
 		this.groupSpg.put(groupName, this.groupSpg.get(groupName) + 1);
+		
+		// update local group vector clock
+		this.groupRpg.getClockGroup().get(groupName).addClock();
+		
+		// get local group vector clock's copy
+		Clock clockForThisGroup = this.groupRpg.getClockGroup().get(groupName).deepCopy();
+		
 
 		for(String mem : this.groupRpg.groups.get(groupName).keySet()){
 			if(!mem.equals(this.localHostName)){
 				message.setDest(mem);
 				MulticastMessage multicastMsg = new MulticastMessage(message, groupName, this.messagePasser.getTimeStamp(),
-						new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)));
+						new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)), 
+						clockForThisGroup);
 				
 				this.sentQueue.get(groupName).put(multicastMsg.getSeqNum(), multicastMsg);
 				this.messagePasser.send(multicastMsg);
@@ -87,7 +95,8 @@ public class MulticastMessagePasser{
 				NACKmsg.setSource(this.localHostName);
 				NACKmsg.setSeqNum(this.groupRpg.groups.get(groupName).get(src) + 1);
 				MulticastMessage multicastNackMsg = new MulticastMessage(NACKmsg, groupName, this.messagePasser.getTimeStamp(),
-						new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)));
+						new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)),
+						groupRpg.getClockGroup().get(groupName));
 				this.messagePasser.send(multicastNackMsg);
 				//mMsg = null;
 				validOriginMsg = false;
@@ -104,7 +113,8 @@ public class MulticastMessagePasser{
 					NACKmsg.setSource(this.localHostName);
 					NACKmsg.setSeqNum(this.groupRpg.groups.get(groupName).get(memName) + 1);
 					MulticastMessage multicastNackMsg = new MulticastMessage(NACKmsg, groupName, this.messagePasser.getTimeStamp(),
-							new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)));
+							new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)), 
+							groupRpg.getClockGroup().get(groupName));
 					this.messagePasser.send(multicastNackMsg);
 				}
 				else if((!memName.equals(src)) && (!memName.equals(this.localHostName)) && this.groupRpg.groups.get(groupName).get(memName) 
