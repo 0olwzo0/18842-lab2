@@ -43,6 +43,8 @@ public class MulticastMessagePasser{
 		this.groupRpg.groups.get(groupName).put(this.localHostName, this.groupSpg.get(groupName));
 		this.groupSpg.put(groupName, this.groupSpg.get(groupName) + 1);
 		
+		//this.messagePasser.getTimeStamp().addClock();
+		
 		// update local group vector clock
 		this.groupRpg.getClockGroup().get(groupName).addClock();
 		
@@ -69,9 +71,14 @@ public class MulticastMessagePasser{
 		if(mMsg.getKind().equals("NACK")){
 			int lastSeq = mMsg.getSeqNum();
 			String groupName = mMsg.getGroupName();
+			//adjust local timestamp
+			this.messagePasser.getTimeStamp().adjustClock(mMsg.getTimeStamp());
+			
+			
 			System.out.println("RECEIVE NACK MESSAGE, START RESEND");
 			for(int i = lastSeq; i < this.groupSpg.get(groupName); i++){
 				MulticastMessage reSendMessage = new MulticastMessage(this.sentQueue.get(groupName).get(i));
+				this.messagePasser.getTimeStamp().addClock();
 				//change set
 				//if()
 				reSendMessage.setKind("normal");
@@ -90,8 +97,13 @@ public class MulticastMessagePasser{
 				//return mMsg;
 				this.groupRpg.groups.get(groupName).put(src, thisSeq);
 			}
+			//
 			else if(thisSeq > this.groupRpg.groups.get(groupName).get(src) + 1){ // send NACK ask for resend
 				Message NACKmsg = new Message(src, "NACK", null);
+				
+				//add clock
+				this.messagePasser.getTimeStamp().addClock();
+				
 				NACKmsg.setSource(this.localHostName);
 				NACKmsg.setSeqNum(this.groupRpg.groups.get(groupName).get(src) + 1);
 				MulticastMessage multicastNackMsg = new MulticastMessage(NACKmsg, groupName, this.messagePasser.getTimeStamp(),
@@ -112,6 +124,9 @@ public class MulticastMessagePasser{
 					Message NACKmsg = new Message(memName, "NACK", null);
 					NACKmsg.setSource(this.localHostName);
 					NACKmsg.setSeqNum(this.groupRpg.groups.get(groupName).get(memName) + 1);
+					//add clock
+					this.messagePasser.getTimeStamp().addClock();
+					
 					MulticastMessage multicastNackMsg = new MulticastMessage(NACKmsg, groupName, this.messagePasser.getTimeStamp(),
 							new Hashtable<String, Integer>(this.groupRpg.groups.get(groupName)), 
 							groupRpg.getClockGroup().get(groupName));

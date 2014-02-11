@@ -303,8 +303,8 @@ public class MessagePasser {
 							MulticastMessage receiveMessage= mmp.receive((MulticastMessage)(incomingMessage));
 							if(receiveMessage != null){
 								// update group clock
-								groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
-										).adjustClock(receiveMessage.getClockForGroup());
+								/*groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+										).adjustClock(receiveMessage.getClockForGroup());*/
 								
 								inputQueue.add(receiveMessage);	
 
@@ -337,8 +337,8 @@ public class MessagePasser {
 									MulticastMessage dup = new MulticastMessage((MulticastMessage)receiveMessage);
 									dup.setDuplicate(true);
 									// update group clock
-									groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
-											).adjustClock(receiveMessage.getClockForGroup());
+									/*groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+											).adjustClock(receiveMessage.getClockForGroup());*/
 									inputQueue.add(receiveMessage);
 									inputQueue.add(dup);
 								}
@@ -409,8 +409,8 @@ public class MessagePasser {
 				MulticastMessage receiveMessage = mmp.receive((MulticastMessage)(delayMsg));
 				if(receiveMessage != null) {
 					// update group clock
-					groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
-							).adjustClock(receiveMessage.getClockForGroup());
+					/*groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+							).adjustClock(receiveMessage.getClockForGroup());*/
 					inputQueue.add(receiveMessage);
 				}
 			}
@@ -471,6 +471,8 @@ public class MessagePasser {
 								MulticastMessage mcMessage = (MulticastMessage) message;
 								System.out.println(mcMessage.toString());
 								this.hostTimeStamp.adjustClock(mcMessage.getTimeStamp());
+								groupsRpg.getClockGroup().get(mcMessage.getGroupName()
+										).adjustClock(mcMessage.getClockForGroup());
 							}
 						}
 						
@@ -488,6 +490,15 @@ public class MessagePasser {
 					} else if ("c".equals(tokens[0])){
 						System.out.println("CurrentClock:"+this.hostTimeStamp);
 						this.hostTimeStamp.addClock();
+					} else if ("gc".equals(tokens[0])){
+						if(tokens[1] != null){
+							System.out.println("CurrentGroupClock:"+this.groupsRpg.getClockGroup().get(tokens[1]));
+							this.hostTimeStamp.addClock();
+						}
+						else{
+							System.out.println("please input groupname");
+							System.out.print(localName + "# ");
+						}
 					} else {
 						// Invalid command
 						System.out.println("Couldn't recognize this command.");

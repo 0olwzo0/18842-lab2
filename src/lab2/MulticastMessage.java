@@ -122,8 +122,8 @@ public class MulticastMessage extends Message implements Serializable{
  	
  	@Override
  	public String toString() {
- 		return "MESSAGE{"+ source +"->"+ dest +" seqNum:"+ seqNum +" duplicate:"+ duplicate +" kind:"+ kind
+ 		return "MESSAGE(MULTICASTMESSAGE)\n{"+ source +"->"+ dest +" seqNum:"+ seqNum +" duplicate:"+ duplicate +" kind:"+ kind
  				+" data:"+ data +" \nTIMESTAMP[:" + this.timeStamp + " ]\nACK:" + this.acknowledgement + "} "
- 				+ " clockForGroup = {" + clockForGroup.toString() + "}";
+ 				+ "\nGROUPCLOCK = {" + clockForGroup.toString() + "}";
  	}
 }
