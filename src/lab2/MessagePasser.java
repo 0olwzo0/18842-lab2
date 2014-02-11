@@ -303,8 +303,8 @@ public class MessagePasser {
 							MulticastMessage receiveMessage= mmp.receive((MulticastMessage)(incomingMessage));
 							if(receiveMessage != null){
 								// update group clock
-								/*groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
-										).adjustClock(receiveMessage.getClockForGroup());*/
+								groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+										).adjustClock(receiveMessage.getClockForGroup());
 								
 								inputQueue.add(receiveMessage);	
 
@@ -337,8 +337,8 @@ public class MessagePasser {
 									MulticastMessage dup = new MulticastMessage((MulticastMessage)receiveMessage);
 									dup.setDuplicate(true);
 									// update group clock
-									/*groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
-											).adjustClock(receiveMessage.getClockForGroup());*/
+									groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+											).adjustClock(receiveMessage.getClockForGroup());
 									inputQueue.add(receiveMessage);
 									inputQueue.add(dup);
 								}
@@ -409,8 +409,8 @@ public class MessagePasser {
 				MulticastMessage receiveMessage = mmp.receive((MulticastMessage)(delayMsg));
 				if(receiveMessage != null) {
 					// update group clock
-					/*groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
-							).adjustClock(receiveMessage.getClockForGroup());*/
+					groupsRpg.getClockGroup().get(receiveMessage.getGroupName()
+							).adjustClock(receiveMessage.getClockForGroup());
 					inputQueue.add(receiveMessage);
 				}
 			}
@@ -432,19 +432,19 @@ public class MessagePasser {
 			while ((inputCommand = in.readLine()) != null) {
 				String[] tokens = inputCommand.split(" ");
 				if (tokens.length > 0) {
-					if ("s".equals(tokens[0]) && tokens.length == 3) {
+					if ("s".equals(tokens[0]) && tokens.length == 4) {
 						/**
 						 * send multicast message
 						 */
 						if(tokens[1].startsWith("Group")){
-							Message message = new Message(tokens[1], tokens[2], null);
+							Message message = new Message(tokens[1], tokens[2], tokens[3]);
 							message.setSource(localName);
 							this.hostTimeStamp.addClock();
 							this.mmp.send(tokens[1], message);
 						}
 						else{
 							// Send: Create a new message and send
-							Message message = new Message(tokens[1], tokens[2], null);
+							Message message = new Message(tokens[1], tokens[2], tokens[3]);
 							message.setSource(localName);
 							message.setSeqNum(nextSeqNum++);
 							// Increment Local TimeStamp
@@ -471,8 +471,8 @@ public class MessagePasser {
 								MulticastMessage mcMessage = (MulticastMessage) message;
 								System.out.println(mcMessage.toString());
 								this.hostTimeStamp.adjustClock(mcMessage.getTimeStamp());
-								groupsRpg.getClockGroup().get(mcMessage.getGroupName()
-										).adjustClock(mcMessage.getClockForGroup());
+								//groupsRpg.getClockGroup().get(mcMessage.getGroupName()
+								//		).adjustClock(mcMessage.getClockForGroup());
 							}
 						}
 						
